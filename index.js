@@ -1,32 +1,53 @@
-// index.js
-// where your node app starts
+const express = require("express");
+const cors = require("cors");
 
-// init project
-var express = require('express');
-var app = express();
+const app = express();
 
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
+// Enable CORS for FCC testing
+app.use(cors({ optionsSuccessStatus: 200 }));
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
+// Serve static files
+app.use(express.static("public"));
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+// Root route serves an HTML file
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
+// API Endpoint: Timestamp Microservice
+app.get("/api/timestamp/:date?", (req, res) => {
+  let { date } = req.params;
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+  // Handle Empty Input - Return Current Time
+  if (!date) {
+    let now = new Date();
+    return res.json({
+      unix: now.getTime(),
+      utc: now.toUTCString(),
+    });
+  }
+
+  // Handle UNIX timestamps correctly
+  if (/^\d+$/.test(date)) {
+    date = parseInt(date); // Convert to integer
+  }
+
+  let parsedDate = new Date(date);
+
+  // Handle Invalid Dates
+  if (parsedDate.toString() === "Invalid Date") {
+    return res.json({ error: "Invalid Date" });
+  }
+
+  // Return Valid JSON Response
+  res.json({
+    unix: parsedDate.getTime(),
+    utc: parsedDate.toUTCString(),
+  });
 });
 
-
-
-// Listen on port set in environment variable or default to 3000
-var listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Your app is listening on port ${PORT}`);
 });
